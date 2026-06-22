@@ -1,6 +1,6 @@
 # Compiler and Flags
 CC      = gcc
-CFLAGS  = -Wall -Wextra -Werror -pedantic -std=c99 -I$(INC_DIR)
+CFLAGS  = -Wall -Wextra -Werror -pedantic -std=c99 -I$(INC_DIR) -fsanitize=address
 
 # Directory Structure
 SRC_DIR   = lib/src
@@ -35,8 +35,13 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 $(TEST_TARGET): $(TEST_SRCS) $(LIB_TARGET)
 	$(CC) $(CFLAGS) $(TEST_SRCS) -L$(LIB_DIR) -lsorting -o $@
 
+# Run the cross-platform test script
+test: all 
+	@echo "Running tests with AddressSanitizer diagnostic checks..."
+	ASAN_OPTIONS=detect_leaks=1 ./$(TEST_TARGET)
+
 # Clean up all build artifacts, object files, and test binaries
 clean:
 	rm -rf $(OBJ_DIR) $(LIB_TARGET) $(TEST_TARGET)
 
-.PHONY: all clean
+.PHONY: all clean test 
