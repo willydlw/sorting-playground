@@ -9,6 +9,14 @@
  * @param arr Pointer to the first elment of the integer array.
  * @param n   The number of elements in the array.
  */
- void bubble_sort(int *arr, size_t n);
+void bubble_sort(int *arr, size_t n);
+
+/**
+ * @brief Sorts an array of integers using the Selection Sort algorithm.
+ * 
+ * @param arr Pointer to the first elment of the integer array.
+ * @param n   The number of elements in the array.
+ */
+void selection_sort(int *arr, size_t n);
 
 #endif /* SORTING_LIBS_H */
