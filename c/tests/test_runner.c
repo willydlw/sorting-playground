@@ -14,8 +14,24 @@
 #define MAX_ARRAY_SIZE 100
 #define DEFAULT_NUM_TESTS 3ULL 
 
+// Define a function pointer type for the sorting algorithms 
+typedef void (*sort_func_t)(int *, size_t);
 
-// Internal-only tracking structure
+// Structure to pair an algorithm's name with its function pointer 
+typedef struct {
+    const char* name;
+    sort_func_t function;
+} SortAlgorithm;
+
+// Register algorithms 
+static const SortAlgorithm ALGORITHMS[] = {
+    {"Bubble Sort", bubble_sort},
+    {"Selection Sort", selection_sort}
+};
+static const size_t NUM_ALGORITHMS = sizeof(ALGORITHMS) / sizeof(ALGORITHMS[0]);
+
+
+// Failure data tracking structure
 typedef struct {
     size_t index_a;
     size_t index_b;
@@ -62,8 +78,7 @@ static bool parse_size_t(const char *str, size_t *out_val){
 }
 
 
-// Checks sorting (ascending order) and records exact failure point
-// Marked static to declare file-local scope
+// Checks sorting (ascending order) and records exact failure point (if any)
 static bool verify_sorted(const int *arr, size_t n, FailureInfo *fail_info) {
     for (size_t i = 0; i < n - 1; i++) {
         if (arr[i] > arr[i + 1]) {
@@ -78,6 +93,7 @@ static bool verify_sorted(const int *arr, size_t n, FailureInfo *fail_info) {
     }
     return true;
 }
+
 
 static void print_array(const int *arr, size_t n){
     printf("[");
@@ -94,20 +110,23 @@ static void fill_array_random(int *arr, size_t n){
     }
 }
 
-
-static void test_bubble_sort(const char* test_name, const int *original_arr, size_t n){
-
-    // Allocate memory and retain a copy of the original state
+// Accepts a single algorithm context along with the data set 
+static void test_single_algorithm(
+    const SortAlgorithm *alg, 
+    const char* test_name, 
+    const int *original_arr, 
+    size_t n){
+    
+        // Allocate memory and retain a copy of the original state
     int *working_arr = malloc(n * sizeof(int));
     if (!working_arr){
         perror("Allocation failed");
         return;
     }
-
     memcpy(working_arr, original_arr, n * sizeof(int));
 
-    // Execute the sorting algorithm
-    bubble_sort(working_arr, n);
+    // Execute the specific sorting algorithm function pointer
+    alg->function(working_arr, n);
 
     // Verify results
     FailureInfo fail_info;
@@ -126,6 +145,14 @@ static void test_bubble_sort(const char* test_name, const int *original_arr, siz
 
     free(working_arr);
 }
+
+static void evaluate_dataset(const char *test_name, const int *original_arr, size_t n){
+    for(size_t i = 0; i < NUM_ALGORITHMS; i++){
+        test_single_algorithm(&ALGORITHMS[i], test_name, original_arr, n);
+    }
+    printf("\n");
+}
+
 
 static void run_random_tests(size_t num_tests){
 
@@ -148,32 +175,32 @@ static void run_random_tests(size_t num_tests){
         snprintf(test_name, sizeof(test_name), "Random Test #%zu (Size: %zu)", i+1, n);
 
         // execute test
-        test_bubble_sort(test_name, original_arr, n);
+        evaluate_dataset(test_name, original_arr, n);
 
         // free memory to prevent leaks
         free(original_arr);
     }
 }
 
-static void run_tests(void){
-    
+static void run_static_tests(void){
+    printf("=== Running Static Edge Cases ===\n");
     {   // Edge Case: Single Element Array
         const char *name = "Single Element Array";
         int arr[] = {1};
-        test_bubble_sort(name, arr, sizeof(arr) / sizeof(arr[0]));
+        evaluate_dataset(name, arr, sizeof(arr) / sizeof(arr[0]));
     }
 
     {   // Array already sorted
         const char *name = "Already Sorted Array";
         int arr[] = {1, 2, 3, 4, 5};
-        test_bubble_sort(name, arr, sizeof(arr) / sizeof(arr[0]));
+        evaluate_dataset(name, arr, sizeof(arr) / sizeof(arr[0]));
         
     }
 
     {   // Unsorted array
         const char *name = "Unsorted Array";
         int arr[] = {64, 34, 25, 12, 22, 11, 90};
-        test_bubble_sort(name, arr, sizeof(arr) / sizeof(arr[0]));
+        evaluate_dataset(name, arr, sizeof(arr) / sizeof(arr[0]));
     }
 }
 
@@ -181,9 +208,7 @@ static void run_tests(void){
 
 int main(int argc, char *argv[]) {
     srand(time(NULL));
-
     size_t num_random_tests = DEFAULT_NUM_TESTS;
-
     if (argc > 1){
         if (!parse_size_t(argv[1], &num_random_tests)){
             fprintf(stderr, "Error: Argument %s is not be a valid positive integer withing range. "
@@ -191,10 +216,9 @@ int main(int argc, char *argv[]) {
         }
     }
        
-
     printf("\n--- Running Sorting Algorithm Tests ---\n");
-    run_tests();
+    run_static_tests();
     run_random_tests(num_random_tests);
-    printf("---------------------------------------\n");
+    printf("---------------------------------------\n\n");
     return 0;
 }
