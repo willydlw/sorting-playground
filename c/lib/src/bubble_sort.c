@@ -23,11 +23,14 @@
         for(size_t j = 0; j < n - i - 1; j++){
             
             RECORD_COMPARE();
-            if(arr[j] > arr[j+1]){
+            int val_j = arr[ARR_READ(j)];
+            int val_j1 = arr[ARR_READ(j+1)];
+
+            if(val_j > val_j1){
                 RECORD_SWAP();
-                int temp = arr[j];
-                arr[j] = arr[j+1];
-                arr[j+1] = temp;
+                // Use cached alues instead of calling ARR_READ again
+                arr[ARR_WRITE(j)] = val_j1;
+                arr[ARR_WRITE(j+1)] = val_j;
                 swapped = true;
             }
         }
